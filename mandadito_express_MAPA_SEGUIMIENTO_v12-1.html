@@ -1,0 +1,200 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mandadito Express — MVP v7</title>
+<style>
+body{margin:0;font-family:Arial;background:#f4f6f8;color:#172536}header{background:#10243d;color:#fff;padding:14px 4%;position:sticky;top:0;z-index:5}nav{max-width:1200px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.logo{font-size:22px;font-weight:900}.logo b{color:#ffbf00}button{border:0;border-radius:9px;padding:10px;font-weight:800;cursor:pointer}.tab{background:#fff}.on,.primary{background:#ffbf00}main{max-width:1200px;margin:auto;padding:22px 4%}.hero,.panel,.card,.order,.stat{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 10px #0001}.hero{background:#173958;color:#fff}.cats,.grid,.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px}.grid{grid-template-columns:repeat(auto-fit,minmax(205px,1fr));margin-top:15px}.cat{background:#fff}.cat span{display:block;font-size:28px}.active{background:#ffbf00}.pic{height:110px;background:#edf0f3;display:grid;place-items:center;font-size:48px;margin:-18px -18px 12px}.price{font-size:18px;font-weight:900;margin:8px 0}.add,.full{width:100%;background:#10243d;color:#fff}select,input,textarea{width:100%;padding:10px;box-sizing:border-box;border:1px solid #ddd;border-radius:9px;margin:5px 0 10px}.overlay{display:none;position:fixed;inset:0;background:#0008;z-index:10}.modal{background:#fff;max-width:620px;margin:4vh auto;padding:20px;border-radius:18px;max-height:92vh;overflow:auto}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee}.order{margin:12px 0}.status{padding:6px 9px;background:#e8edf2;border-radius:14px;font-size:12px;font-weight:800}.ok{background:#20a05a;color:white}.danger{background:#e5484d;color:white}.muted{font-size:12px;color:#718096}.big{font-size:25px;font-weight:900}.notice{background:#fff7d6;padding:12px;border-radius:10px;margin:10px 0}.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:10px}.money{padding:10px;border-radius:10px;background:#f0f4f7}
+</style><style>
+.mapbox{border:1px solid #d8dee6;border-radius:14px;overflow:hidden;background:#edf0f3}
+.mapbox iframe{width:100%;height:280px;border:0;display:block}
+.locrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+</style></head><body>
+<header><nav><div class="logo">Mandadito <b>EXPRESS</b><div style="font-size:12px;color:#dbe4ef">Piloto · Abarrotes Guzmán · Morelia</div></div>
+<div><button id="cbtn" class="tab on" onclick="mode('cliente')">📱 Cliente</button><button id="tbtn" class="tab" onclick="mode('tienda')">🏪 Tienda</button><button id="rbtn" class="tab" onclick="mode('repartidor')">🚴 Yo reparto</button><button id="abtn" class="tab" onclick="mode('admin')">👑 Admin</button><button class="tab" onclick="openCart()">🛒 <span id="cartN">0</span></button></div></nav></header>
+<main><section class="hero">
+    <div style="margin-top:12px"><span class="status ok">PILOTO ACTIVO</span></div><h1>🛒 Mandadito Express</h1><p>Primer piloto: Abarrotes Guzmán + tú como repartidor.</p></section>
+<section id="client">
+    <div class="panel" style="margin-bottom:12px">
+      <h3>📲 Pedido</h3>
+      <p class="muted">Cada pedido recibe un código para identificarlo fácilmente.</p>
+      <div id="lastOrderCode" class="big">Sin pedidos</div>
+      <button onclick="copyLastCode()">Copiar código</button>
+    </div>
+    <h2>Categorías</h2><div class="cats" id="cats"></div><h2>Productos</h2><div class="grid" id="products"></div></section>
+<section id="store" style="display:none"><h2>🏪 Panel de Abarrotes Guzmán</h2><div class="stats"><div class="stat">Pedidos <div class="big" id="sOrders">0</div></div><div class="stat">Ventas productos <div class="big" id="sSales">$0</div></div><div class="stat">Pendientes <div class="big" id="sPending">0</div></div></div><div id="storeOrders"></div></section>
+<section id="rider" style="display:none">
+    <h2>🚴 Panel de reparto</h2>
+    <div class="panel" style="margin-bottom:12px">
+      <h3>📍 Mi ubicación en reparto</h3>
+      <p class="muted">Actívala durante una entrega para mostrar tu posición en este dispositivo.</p>
+      <button class="primary" onclick="startRiderLocation()">🟢 Compartir ubicación</button>
+      <button onclick="stopRiderLocation()">⏹️ Detener</button>
+      <div id="riderLocStatus" class="muted" style="margin-top:8px">No compartiendo ubicación</div>
+      <div id="riderMap" class="mapbox" style="margin-top:10px">
+        <div style="padding:30px;text-align:center">Mapa del repartidor</div>
+      </div>
+    </div><div class="notice">Zona piloto: <b>envío fijo de $20</b>. Tú recibes $15 y Mandadito Express $5 por pedido.</div><div class="stats"><div class="stat">Entregas <div class="big" id="rTrips">0</div></div><div class="stat">Ganancia repartidor <div class="big" id="rEarn">$0</div></div></div><div id="riderOrders"></div></section>
+<section id="admin" style="display:none"><h2>👑 Administración</h2><button onclick="configureCloud()">☁️ Conectar servidor</button><div class="notice">Configuración inicial del piloto: envío fijo <b>$20</b> · repartidor <b>$15</b> · Mandadito Express <b>$5</b>.</div><div class="stats"><div class="stat">Ingresos por plataforma <div class="big" id="aEarn">$0</div></div><div class="stat">Pagos a repartidor <div class="big" id="aRider">$0</div></div><div class="stat">Ventas de tiendas <div class="big" id="aStores">$0</div></div></div><div class="panel" style="margin-top:12px"><h3>Configuración del envío</h3><label>Envío al cliente ($)</label><input id="shipCfg" type="number" value="20" step="1"><label>Pago al repartidor ($)</label><input id="riderCfg" type="number" value="15" step="1"><p class="muted">La diferencia se registra como ingreso de Mandadito Express.</p><button class="primary" onclick="saveCfg()">Guardar configuración</button> <button onclick="if(confirm('Borrar pedidos del piloto?')){orders=[];persist();renderAdmin();}">Reiniciar pedidos</button><p id="cfgMsg" class="muted"></p></div></section></main>
+<div class="overlay" id="overlay"><div class="modal"><button style="float:right" onclick="closeCart()">✕</button><h2>🛒 Carrito</h2><div id="items"></div><hr><h3>Productos: <span id="total">$0</span></h3><h3>Envío: <span id="shipPreview">$20</span></h3><h2>Total: <span id="grand">$0</span></h2><input id="name" placeholder="Nombre"><textarea id="addr" placeholder="Dirección, colonia y referencias"></textarea>
+<div class="panel">
+<h3>📍 Ubicación de entrega</h3>
+<p class="muted">Puedes compartir tu ubicación actual.</p>
+<div class="locrow"><input id="lat" type="number" step="any" placeholder="Latitud"><input id="lng" type="number" step="any" placeholder="Longitud"></div>
+<button onclick="useMyLocation()">📍 Usar mi ubicación</button>
+<div id="mapPreview" class="mapbox" style="margin-top:10px"><div style="padding:30px;text-align:center">Selecciona tu ubicación para verla en el mapa</div></div>
+</div><button class="full primary" onclick="sendOrder()">💳 Confirmar pedido (DEMO)</button><p class="muted">Pago simulado; todavía no se realiza ningún cobro real.</p></div></div>
+<script>
+const products=[{"category": "Frutas y verduras", "name": "Plátano", "detail": "$20/kg", "emoji": "🍌"}, {"category": "Frutas y verduras", "name": "Jitomate", "detail": "$26/kg", "emoji": "🍅"}, {"category": "Frutas y verduras", "name": "Tomate", "detail": "$24/kg", "emoji": "🍅"}, {"category": "Frutas y verduras", "name": "Limón", "detail": "$38/kg", "emoji": "🍋"}, {"category": "Frutas y verduras", "name": "Lechuga", "detail": "$17/kg", "emoji": "🥬"}, {"category": "Frutas y verduras", "name": "Cebolla", "detail": "$34/kg", "emoji": "🧅"}, {"category": "Frutas y verduras", "name": "Guayaba", "detail": "$30/kg", "emoji": "🍈"}, {"category": "Frutas y verduras", "name": "Papa", "detail": "$46/kg", "emoji": "🥔"}, {"category": "Frutas y verduras", "name": "Chayote", "detail": "$26/kg", "emoji": "🥒"}, {"category": "Frutas y verduras", "name": "Chile serrano", "detail": "$46/kg", "emoji": "🌶️"}, {"category": "Frutas y verduras", "name": "Repollo", "detail": "$20/pieza", "emoji": "🥬"}, {"category": "Frutas y verduras", "name": "Zanahoria", "detail": "$22/kg", "emoji": "🥕"}, {"category": "Frutas y verduras", "name": "Jamaica", "detail": "$150/kg", "emoji": "🌺"}, {"category": "Frutas y verduras", "name": "Calabaza", "detail": "$30/kg", "emoji": "🎃"}, {"category": "Frutas y verduras", "name": "Mango", "detail": "$32/kg", "emoji": "🥭"}, {"category": "Frutas y verduras", "name": "Pepino", "detail": "$26/kg", "emoji": "🥒"}, {"category": "Frutas y verduras", "name": "Chile de rellenar", "detail": "$30/kg", "emoji": "🌶️"}, {"category": "Limpieza", "name": "Vogue papel higiénico", "detail": "4 piezas, 400 hojas — $32", "emoji": "🧻"}, {"category": "Limpieza", "name": "Quality papel higiénico", "detail": "6 piezas, 600 hojas — $64", "emoji": "🧻"}, {"category": "Limpieza", "name": "Clarasol", "detail": "1 L — $16", "emoji": "🧴"}, {"category": "Limpieza", "name": "Clarasol", "detail": "½ L — $11", "emoji": "🧴"}, {"category": "Cuidado personal", "name": "Palmolive Capriz", "detail": "Tapa roja — $52", "emoji": "🧴"}, {"category": "Cuidado personal", "name": "Palmolive Capriz", "detail": "Tapa morada — $52", "emoji": "🧴"}, {"category": "Cuidado personal", "name": "Palmolive Capriz", "detail": "Tapa verde — $52", "emoji": "🧴"}, {"category": "Limpieza", "name": "Suavitel", "detail": "850 ml — $30", "emoji": "🧴"}, {"category": "Limpieza", "name": "Suavitel", "detail": "450 ml — $24", "emoji": "🧴"}, {"category": "Limpieza", "name": "Downy Perfume Pasión", "detail": "750 ml — $35", "emoji": "🧴"}, {"category": "Limpieza", "name": "Downy Intense", "detail": "Tapa amarilla — $35", "emoji": "🧴"}, {"category": "Limpieza", "name": "Downy Intense", "detail": "Tapa roja — $35", "emoji": "🧴"}, {"category": "Limpieza", "name": "Downy Intense", "detail": "Tapa rosa — $35", "emoji": "🧴"}, {"category": "Limpieza", "name": "Downy Intense", "detail": "Tapa verde — $35", "emoji": "🧴"}, {"category": "Higiene femenina", "name": "Saba Morada Nocturna", "detail": "Paquete — $27", "emoji": "🩷"}, {"category": "Higiene femenina", "name": "Saba Invisible con alas", "detail": "10 toallas — $23", "emoji": "🩷"}, {"category": "Jabones", "name": "Jabón Sote", "detail": "Pieza — $27", "emoji": "🧼"}, {"category": "Jabones", "name": "Jabón Zed", "detail": "Pieza — $22", "emoji": "🧼"}, {"category": "Jabones", "name": "Jabón Palmolive", "detail": "Pieza — $22", "emoji": "🧼"}, {"category": "Jabones", "name": "Jabón Neutro", "detail": "Pieza — $27", "emoji": "🧼"}, {"category": "Jabones", "name": "Jabón La Vaca Extra", "detail": "Pieza — $23", "emoji": "🧼"}, {"category": "Jabones", "name": "Jabón Fama", "detail": "Pieza — $16", "emoji": "🧼"}, {"category": "Limpieza", "name": "Más Color", "detail": "Sobre 415 ml — $24", "emoji": "🧺"}, {"category": "Limpieza", "name": "Salvo Me Salva", "detail": "300 ml — $24", "emoji": "🧽"}, {"category": "Limpieza", "name": "Salvo Me Salva", "detail": "½ L — $33", "emoji": "🧽"}, {"category": "Aceites", "name": "Aceite Carisma", "detail": "1 L — $42", "emoji": "🫗"}, {"category": "Aceites", "name": "Aceite 1-2-3", "detail": "1 L — $50", "emoji": "🫗"}, {"category": "Aceites", "name": "Aceite Cristal", "detail": "½ L — $30", "emoji": "🫗"}, {"category": "Aceites", "name": "Aceite Nutrioli", "detail": "400 ml — $25", "emoji": "🫗"}, {"category": "Aceites", "name": "Aceite Nutrioli", "detail": "800 ml — $49", "emoji": "🫗"}, {"category": "Aceites", "name": "Aceite AVE", "detail": "400 ml — $24", "emoji": "🫗"}, {"category": "Cereales", "name": "Choco Krispis", "detail": "1 kg — $67", "emoji": "🥣"}, {"category": "Cereales", "name": "Zucaritas", "detail": "1 kg — $67", "emoji": "🥣"}, {"category": "Limpieza", "name": "Ensueño", "detail": "850 ml — $29", "emoji": "🧴"}, {"category": "Limpieza", "name": "Fabuloso", "detail": "1 L — $35", "emoji": "🧴"}, {"category": "Limpieza", "name": "Fabuloso", "detail": "½ L — $22", "emoji": "🧴"}, {"category": "Limpieza", "name": "Pinol", "detail": "½ L — $24", "emoji": "🧴"}, {"category": "Limpieza", "name": "Pinol", "detail": "1 L — $34", "emoji": "🧴"}, {"category": "Detergentes", "name": "Jabón Roma", "detail": "Bolsa 250 g — $15", "emoji": "🧺"}, {"category": "Detergentes", "name": "Jabón AC", "detail": "½ kg — $26", "emoji": "🧺"}, {"category": "Detergentes", "name": "Ariel en polvo", "detail": "½ kg — $28", "emoji": "🧺"}, {"category": "Detergentes", "name": "Foca en polvo", "detail": "½ kg — $25", "emoji": "🧺"}, {"category": "Detergentes", "name": "Blancanieves", "detail": "¼ kg — $15", "emoji": "🧺"}, {"category": "Enlatados", "name": "Atún en aceite", "detail": "Lata — $25", "emoji": "🐟"}, {"category": "Enlatados", "name": "Atún en agua", "detail": "Lata — $25", "emoji": "🐟"}, {"category": "Enlatados", "name": "Sardina", "detail": "425 g — $44", "emoji": "🐟"}, {"category": "Mermeladas", "name": "Mermelada de fresa Clemente Jacques", "detail": "270 g — $35", "emoji": "🍓"}, {"category": "Salsas", "name": "Mayonesa", "detail": "105 g — $27", "emoji": "🥫"}, {"category": "Salsas", "name": "Mayonesa", "detail": "190 g — $33", "emoji": "🥫"}, {"category": "Leches y complementos", "name": "Leche Carnation", "detail": "360 g — $27", "emoji": "🥛"}, {"category": "Leches y complementos", "name": "Lechera", "detail": "375 g — $34", "emoji": "🥛"}, {"category": "Salsas", "name": "Salsa Maggi", "detail": "$24 — presentación por confirmar", "emoji": "🥫"}, {"category": "Café", "name": "Nescafé Clásico", "detail": "28 g — $32", "emoji": "☕"}, {"category": "Café", "name": "Nescafé Clásico", "detail": "14 g — $15", "emoji": "☕"}, {"category": "Café", "name": "Nescafé Café de Olla", "detail": "10 g — $12", "emoji": "☕"}, {"category": "Bebidas", "name": "Clamato Original", "detail": "473 ml — $30", "emoji": "🥤"}, {"category": "Leches y complementos", "name": "Lechera", "detail": "Bolsa 209 g — $20", "emoji": "🥛"}, {"category": "Enlatados", "name": "Chipotle adobado La Morena", "detail": "100 g — $20", "emoji": "🌶️"}, {"category": "Enlatados", "name": "Chipotle adobado La Morena", "detail": "210 g — $35", "emoji": "🌶️"}, {"category": "Enlatados", "name": "Jalapeños en escabeche La Morena", "detail": "210 g — $19", "emoji": "🌶️"}, {"category": "Enlatados", "name": "Rajas verdes de jalapeño La Morena", "detail": "210 g — $22", "emoji": "🌶️"}, {"category": "Enlatados", "name": "Ensalada de verduras Clemente Jacques", "detail": "220 g — $16", "emoji": "🥗"}, {"category": "Enlatados", "name": "Elotes Clemente Jacques", "detail": "410 g — $20", "emoji": "🌽"}, {"category": "Enlatados", "name": "Ensalada de verduras Clemente Jacques", "detail": "410 g — $20", "emoji": "🥗"}, {"category": "Salsas y preparados", "name": "Mole Doña María", "detail": "235 g — $45", "emoji": "🥘"}, {"category": "Salsas y preparados", "name": "Del Fuerte tomates molidos y condimentados", "detail": "345 g — $18", "emoji": "🍅"}, {"category": "Salsas", "name": "Clemente Jacques salsa cátsup", "detail": "220 g — $18", "emoji": "🍅"}, {"category": "Salsas", "name": "Envasa salsa de tomate para aderezar", "detail": "380 g — $19", "emoji": "🥫"}, {"category": "Frijoles", "name": "Frijoles refritos La Sierra", "detail": "440 g — $18", "emoji": "🫘"}, {"category": "Frijoles", "name": "Frijoles refritos bayos Isadora", "detail": "450 g — $22", "emoji": "🫘"}, {"category": "Salsas y picantes", "name": "Salsa picante Don Vasco", "detail": "500 ml — $20", "emoji": "🌶️"}, {"category": "Salsas y picantes", "name": "Valentina salsa picante", "detail": "370 ml — $22", "emoji": "🌶️"}, {"category": "Botanas", "name": "Big Mix", "detail": "Todas las presentaciones — $22", "emoji": "🍿"}, {"category": "Botanas", "name": "Pop Carameladas", "detail": "$16", "emoji": "🍿"}, {"category": "Botanas", "name": "Chips", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Takis", "detail": "$20", "emoji": "🌶️"}, {"category": "Botanas", "name": "Runners", "detail": "$18", "emoji": "🍿"}, {"category": "Botanas", "name": "Sabritas Receta Crujiente Flamin' Hot", "detail": "Bolsaza — $25", "emoji": "🍿"}, {"category": "Botanas", "name": "Sabritas Original", "detail": "Bolsaza — $25", "emoji": "🍿"}, {"category": "Botanas", "name": "Ruffles Queso", "detail": "Bolsaza — $25", "emoji": "🍿"}, {"category": "Botanas", "name": "Doritos Nacho", "detail": "Bolsaza — $25", "emoji": "🍿"}, {"category": "Botanas", "name": "Cheetos Torciditos", "detail": "Bolsaza — $25", "emoji": "🍿"}, {"category": "Botanas", "name": "Sabritas Extra Flamin' Hot", "detail": "Bolsaza — $25", "emoji": "🍿"}, {"category": "Botanas", "name": "Paquetaxo Botanero Sabritas Receta Crujiente", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Paquetaxo Botanero Sabritas Crujiente Flamin' Hot", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Paquetaxo Botanero Sabritas Original", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Paquetaxo Botanero Sabritas Adobadas", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Ruffles Mega Crunch Salsa Roja", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Ruffles Mega Crunch Jalapeño", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Sabritas Flamin' Hot", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Sabritas Habanero", "detail": "$20", "emoji": "🌶️"}, {"category": "Botanas", "name": "Sabritas Crema y Especias", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Sabritas Limón", "detail": "$20", "emoji": "🍋"}, {"category": "Botanas", "name": "Ruffles Original", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Ruffles con Queso", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Sabritas Chicharrón", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Doritos Incógnita", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Tostitos Verdes", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Doritos Dinamita Flamin' Hot", "detail": "$20", "emoji": "🌶️"}, {"category": "Botanas", "name": "Doritos Dinamita Chile y Limón", "detail": "$20", "emoji": "🌶️"}, {"category": "Botanas", "name": "Doritos 3D", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Doritos Pixelolas", "detail": "$20", "emoji": "🍿"}, {"category": "Botanas", "name": "Doritos Flamin' Hot", "detail": "$20", "emoji": "🌶️"}, {"category": "Botanas", "name": "Tostitos Extra Flamin' Hot", "detail": "$20", "emoji": "🌶️"}, {"category": "Botanas", "name": "Crujitos", "detail": "$18", "emoji": "🍿"}, {"category": "Botanas", "name": "Rancheritos", "detail": "$18", "emoji": "🍿"}, {"category": "Botanas", "name": "Fritos Chorizo", "detail": "$18", "emoji": "🍿"}, {"category": "Botanas", "name": "Fritos Limón y Sal", "detail": "$18", "emoji": "🍋"}, {"category": "Botanas", "name": "Fritos Chile Limón", "detail": "$18", "emoji": "🌶️"}, {"category": "Botanas", "name": "Cheetos Puff Azules", "detail": "$17", "emoji": "🍿"}, {"category": "Botanas", "name": "Cheetos Jalapeño Verdes", "detail": "$17", "emoji": "🌶️"}, {"category": "Botanas", "name": "Cheetos Extra Flamin' Hot", "detail": "$17", "emoji": "🌶️"}, {"category": "Botanas", "name": "Cheetos Torciditos", "detail": "$17", "emoji": "🍿"}, {"category": "Botanas", "name": "Cheetos Bolita", "detail": "$17", "emoji": "🍿"}, {"category": "Botanas", "name": "Cheetos Colmillos", "detail": "$17", "emoji": "🍿"}, {"category": "Botanas", "name": "Churrumais", "detail": "$17", "emoji": "🍿"}, {"category": "Botanas", "name": "Rancheritos Salsa Negra", "detail": "$10", "emoji": "🌶️"}, {"category": "Botanas", "name": "Paquetaxo", "detail": "$10", "emoji": "🍿"}];
+const icons={"Frutas y verduras":"🥬","Limpieza":"🧴","Jabones":"🧼","Higiene":"🩷","Aceites":"🫗","Cereales":"🥣","Detergentes":"🧺","Enlatados":"🥫","Mermeladas":"🍓","Salsas":"🥫","Botanas":"🍿","Café":"☕","Bebidas":"🥤","Frijoles":"🫘"};
+let current="Todos",cart=[],orders=JSON.parse(localStorage.getItem("mandadito_orders")||"[]"),
+cfg=JSON.parse(localStorage.getItem("mandadito_cfg")||'{"ship":20,"rider":15}');
+const catsList=["Todos",...new Set(products.map(p=>p.category))];
+function money(x){return "$"+x.toFixed(2)}
+function mode(m){client.style.display=m==="cliente"?"block":"none";store.style.display=m==="tienda"?"block":"none";rider.style.display=m==="repartidor"?"block":"none";admin.style.display=m==="admin"?"block":"none";document.querySelectorAll(".tab").forEach(b=>b.classList.remove("on"));({cliente:cbtn,tienda:tbtn,repartidor:rbtn,admin:abtn}[m]).classList.add("on");if(m==="tienda")renderStore();if(m==="repartidor")renderRider();if(m==="admin")renderAdmin()}
+function refreshLastCode(){let o=orders[0];lastOrderCode.textContent=o?o.code:"Sin pedidos"}
+function copyLastCode(){let o=orders[0];if(!o)return alert("Todavía no hay pedidos.");if(navigator.clipboard)navigator.clipboard.writeText(o.code);alert("Código: "+o.code)}
+function draw(){refreshLastCode();cats.innerHTML=catsList.map(c=>'<button class="cat '+(c===current?'active':'')+'" onclick="current='+JSON.stringify(c)+';draw()"><span>'+((c==="Todos")?"🛒":(icons[c]||"📦"))+'</span>'+c+'</button>').join("");let list=products.filter(p=>current==="Todos"||p.category===current);document.getElementById("products").innerHTML=list.map(p=>{let i=products.indexOf(p),kg=p.detail.includes("/kg");return '<div class="card"><div class="pic">'+p.emoji+'</div><b>'+p.name+'</b><div class="muted">'+p.category+'</div><div class="price">'+p.detail+'</div>'+(kg?'<select id="u'+i+'"><option value=".25">¼ kg</option><option value=".5">½ kg</option><option value=".75">¾ kg</option><option value="1">1 kg</option><option value="piece">Por piezas</option></select><input id="p'+i+'" type="number" min="1" value="1" style="display:none">':'')+'<button class="add" onclick="add('+i+')">Agregar al carrito</button></div>'}).join("");document.querySelectorAll('select[id^="u"]').forEach(s=>s.onchange=()=>document.getElementById("p"+s.id.slice(1)).style.display=s.value==="piece"?"block":"none")}
+function price(p){let m=p.detail.match(/\$(\d+(?:\.\d+)?)/);return m?+m[1]:0}
+function add(i){let p=products[i],kg=p.detail.includes("/kg"),q=1,u="1 pieza",v=price(p);if(kg){let x=document.getElementById("u"+i).value;if(x==="piece"){q=+document.getElementById("p"+i).value||1;u=q+" pieza(s)";v=0}else{q=+x;u={".25":"¼ kg",".5":"½ kg",".75":"¾ kg","1":"1 kg"}[x];v=price(p)*q}}cart.push({name:p.name,qty:q,unit:u,price:v});cartN.textContent=cart.length;openCart()}
+function openCart(){overlay.style.display="block";renderCart()}function closeCart(){overlay.style.display="none"}
+function renderCart(){items.innerHTML=cart.map((x,i)=>'<div class="row"><div><b>'+x.name+'</b><div class="muted">'+x.qty+' · '+x.unit+'</div></div><div><b>'+(x.price?money(x.price):"Por confirmar")+'</b><br><button onclick="cart.splice('+i+',1);renderCart();cartN.textContent=cart.length">Eliminar</button></div></div>').join("")||"<p>Carrito vacío</p>";let sub=cart.reduce((s,x)=>s+x.price,0);total.textContent=money(sub);shipPreview.textContent=money(cfg.ship);grand.textContent=money(sub+cfg.ship)}
+function persist(){localStorage.setItem("mandadito_orders",JSON.stringify(orders));localStorage.setItem("mandadito_cfg",JSON.stringify(cfg))}
+function sendOrder(){if(!cart.length){alert("Agrega al menos un producto.");return;}if(!name.value.trim()||!addr.value.trim()){alert("Escribe tu nombre y la dirección de entrega.");return;}let id=Math.floor(1000+Math.random()*9000),subtotal=cart.reduce((s,x)=>s+x.price,0);orders.unshift({createdAt:new Date().toISOString(),lat:deliveryLat||(+lat.value||null),lng:deliveryLng||(+lng.value||null),code:"ME-"+Math.floor(100000+Math.random()*900000),id,name:name.value.trim(),addr:addr.value.trim(),items:[...cart],subtotal,ship:cfg.ship,riderPay:Math.min(cfg.rider,cfg.ship),platform:Math.max(0,cfg.ship-Math.min(cfg.rider,cfg.ship)),total:subtotal+cfg.ship,status:"Nuevo"});let newOrder=orders[0];deliveryLat=null;deliveryLng=null;lat.value="";lng.value="";cart=[];cartN.textContent=0;persist();saveOrderToCloud(newOrder);closeCart();alert("Pedido enviado. Código: "+newOrder.code);mode("tienda")}
+function actionLabel(s){return s==="Nuevo"?"Aceptar":s==="Aceptado"?"Preparando":s==="Preparando"?"Marcar listo":s==="Listo"?"Solicitar repartidor":"Estado"}
+function renderStore(){let sales=orders.reduce((s,o)=>s+o.subtotal,0);sOrders.textContent=orders.length;sSales.textContent=money(sales);sPending.textContent=orders.filter(o=>!["Entregado","Rechazado"].includes(o.status)).length;storeOrders.innerHTML=orders.length?orders.map((o,i)=>'<div class="order"><h3>Pedido #'+o.id+' · '+o.code+' <span class="status">'+o.status+'</span></h3><p><b>'+o.name+'</b><br>'+o.addr+'</p><ul>'+o.items.map(x=>'<li>'+x.qty+' × '+x.name+' ('+x.unit+') — '+(x.price?money(x.price):"por confirmar")+'</li>').join("")+'</ul><div class="split"><div class="money">Productos<br><b>'+money(o.subtotal)+'</b></div><div class="money">Envío cliente<br><b>'+money(o.ship)+'</b></div><div class="money">Total<br><b>'+money(o.total)+'</b></div></div><br><button class="ok" onclick="advance('+i+')">'+actionLabel(o.status)+'</button> <button class="danger" onclick="orders['+i+'].status='Rechazado';persist();renderStore()">Rechazar</button></div>').join(""):"<div class='panel'><h3>📭 No hay pedidos todavía</h3></div>"}
+function advance(i){let o=orders[i];o.status=o.status==="Nuevo"?"Aceptado":o.status==="Aceptado"?"Preparando":o.status==="Preparando"?"Listo":o.status==="Listo"?"Repartidor solicitado":o.status;persist();updateOrderCloud(o);refreshLastCode();renderStore()}
+function renderRider(){let available=orders.filter(o=>["Repartidor solicitado","En camino","Entregado"].includes(o.status));let trips=orders.filter(o=>o.status==="Entregado").length;rTrips.textContent=trips;rEarn.textContent=money(orders.filter(o=>o.status==="Entregado").reduce((s,o)=>s+o.riderPay,0));riderOrders.innerHTML=available.length?available.map(o=>'<div class="order"><h3>🚴 Pedido #'+o.id+' · '+o.code+' <span class="status">'+o.status+'</span></h3><p><b>Recoger:</b> Abarrotes Guzmán<br><b>Entregar:</b> '+o.name+'<br>'+o.addr+'</p>'+(o.lat&&o.lng?'<p><a target="_blank" href="https://www.openstreetmap.org/?mlat='+o.lat+'&mlon='+o.lng+'#map=17/'+o.lat+'/'+o.lng+'">📍 Abrir destino en mapa</a></p>':'<p class="muted">📍 Sin ubicación GPS</p>')+'<h3>Tu pago por envío: '+money(o.riderPay)+'</h3>'+(o.status==="Repartidor solicitado"?'<button class="ok" onclick="take('+orders.indexOf(o)+')">Aceptar entrega</button>':o.status==="En camino"?'<button class="ok" onclick="deliver('+orders.indexOf(o)+')">Marcar como entregado</button>':"<b>✅ Entregado</b>")+'</div>').join(""):"<div class='panel'><h3>📭 No hay entregas disponibles</h3></div>"}
+function take(i){orders[i].status="En camino";persist();updateOrderCloud(orders[i]);refreshLastCode();renderRider()}function deliver(i){orders[i].status="Entregado";persist();updateOrderCloud(orders[i]);refreshLastCode();renderRider()}
+function renderAdmin(){let platform=orders.reduce((s,o)=>s+o.platform,0),rp=orders.reduce((s,o)=>s+o.riderPay,0),sales=orders.reduce((s,o)=>s+o.subtotal,0);aEarn.textContent=money(platform);aRider.textContent=money(rp);aStores.textContent=money(sales);shipCfg.value=cfg.ship;riderCfg.value=cfg.rider}
+function saveCfg(){cfg.ship=+shipCfg.value||20;cfg.rider=Math.min(+riderCfg.value||15,cfg.ship);persist();cfgMsg.textContent="Guardado: cliente paga "+money(cfg.ship)+", tú recibes "+money(cfg.rider)+" y Mandadito Express recibe "+money(cfg.ship-cfg.rider)+" por pedido.";renderCart()}
+persist();draw();syncOrdersFromCloud();
+</script>
+<script>
+/* === Mandadito Express: API bridge ===
+   Put your backend URL in API_BASE when you deploy the server.
+   Expected endpoints:
+   POST /api/orders
+   GET  /api/orders
+   PATCH /api/orders/:id
+*/
+const API_BASE = localStorage.getItem("mandadito_api") || "";
+let apiOnline = false;
+
+async function apiRequest(path, options={}) {
+  if (!API_BASE) return null;
+  try {
+    const r = await fetch(API_BASE + path, {
+      headers: {"Content-Type":"application/json", ...(options.headers||{})},
+      ...options
+    });
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    apiOnline = true;
+    return await r.json();
+  } catch (e) {
+    apiOnline = false;
+    return null;
+  }
+}
+
+async function syncOrdersFromCloud() {
+  const data = await apiRequest("/api/orders");
+  if (Array.isArray(data)) {
+    orders = data;
+    persist();
+    refreshLastCode();
+    renderStore();
+    renderRider();
+    renderAdmin();
+  }
+}
+
+async function saveOrderToCloud(order) {
+  return await apiRequest("/api/orders", {
+    method:"POST",
+    body:JSON.stringify(order)
+  });
+}
+
+async function updateOrderCloud(order) {
+  return await apiRequest("/api/orders/"+encodeURIComponent(order.id), {
+    method:"PATCH",
+    body:JSON.stringify({status:order.status})
+  });
+}
+
+function configureCloud(){
+  const url = prompt("Pega aquí la dirección de tu servidor, por ejemplo: https://tu-servidor.com");
+  if(url){
+    localStorage.setItem("mandadito_api", url.replace(/\/+$/,""));
+    location.reload();
+  }
+}
+</script>
+<script>
+let deliveryLat=null,deliveryLng=null;
+function useMyLocation(){
+ if(!navigator.geolocation)return alert("Este dispositivo no permite obtener ubicación.");
+ navigator.geolocation.getCurrentPosition(p=>{
+  deliveryLat=p.coords.latitude; deliveryLng=p.coords.longitude;
+  lat.value=deliveryLat.toFixed(6); lng.value=deliveryLng.toFixed(6); showMap(deliveryLat,deliveryLng);
+ },()=>alert("No se pudo obtener tu ubicación. Revisa el permiso de ubicación."));
+}
+function showMap(a,b){
+ mapPreview.innerHTML='<iframe loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox='+(b-.01)+'%2C'+(a-.01)+'%2C'+(b+.01)+'%2C'+(a+.01)+'&layer=mapnik&marker='+a+'%2C'+b+'"></iframe>';
+}
+</script>
+<script>
+let riderWatchId=null, riderLat=null, riderLng=null;
+
+function startRiderLocation(){
+  if(!navigator.geolocation){
+    alert("Este dispositivo no permite obtener ubicación.");
+    return;
+  }
+  if(riderWatchId!==null) return;
+
+  riderLocStatus.textContent="Obteniendo ubicación…";
+
+  riderWatchId=navigator.geolocation.watchPosition(
+    async p=>{
+      riderLat=p.coords.latitude;
+      riderLng=p.coords.longitude;
+
+      riderLocStatus.textContent=
+        "Ubicación activa: "+riderLat.toFixed(5)+", "+riderLng.toFixed(5);
+
+      riderMap.innerHTML=
+        '<iframe loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox='+
+        (riderLng-.01)+'%2C'+(riderLat-.01)+'%2C'+
+        (riderLng+.01)+'%2C'+(riderLat+.01)+
+        '&layer=mapnik&marker='+riderLat+'%2C'+riderLng+'"></iframe>';
+
+      const loc={
+        lat:riderLat,
+        lng:riderLng,
+        updatedAt:new Date().toISOString()
+      };
+
+      localStorage.setItem("mandadito_rider_location",JSON.stringify(loc));
+
+      if(typeof apiRequest==="function" && API_BASE){
+        await apiRequest("/api/rider-location",{
+          method:"POST",
+          body:JSON.stringify(loc)
+        });
+      }
+    },
+    ()=>{
+      riderLocStatus.textContent="No se pudo obtener la ubicación. Revisa el permiso GPS.";
+    },
+    {enableHighAccuracy:true,maximumAge:5000,timeout:10000}
+  );
+}
+
+function stopRiderLocation(){
+  if(riderWatchId!==null){
+    navigator.geolocation.clearWatch(riderWatchId);
+    riderWatchId=null;
+  }
+  riderLocStatus.textContent="No compartiendo ubicación";
+}
+</script>
+</body></html>
